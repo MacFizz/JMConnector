@@ -31,61 +31,61 @@ fx_pat="effect_"
 
 #Config end - Don't touch anything beyond that...
 trim() {
-    local var="$*"
-    # remove leading whitespace characters
-    var="${var#"${var%%[![:space:]]*}"}"
-    # remove trailing whitespace characters
-    var="${var%"${var##*[![:space:]]}"}"
-    printf '%s' "$var"
+  local var="$*"
+  # remove leading whitespace characters
+  var="${var#"${var%%[![:space:]]*}"}"
+  # remove trailing whitespace characters
+  var="${var%"${var##*[![:space:]]}"}"
+  printf '%s' "$var"
 }
 
 list(){
-echo "Listing JACK connections..."
-j_lsp="$(jack_lsp -c)"
-
-n=$(echo "$j_lsp" | wc -l)
-#echo $n
-s=1
-for j in $(seq 1 $n); do
-	element=$(echo "$j_lsp"|head -n $j|tail -n 1)
-#	echo "$j	$element"
-	jack[$j]="$element"
-	if [[ "$element" == "$sys_playback_pat"* ]]; then
-		echo "Main output $s: $element (line $j)"
-		sys_out[$s]=$j
-		s=$(($s+1))
-	fi
-done
-
-nb_sys_out=$(echo "${sys_out[*]}"|wc -l)
-#echo "sys_out: ${sys_out[*]}"
-#echo "nb_sysout: ${#sys_out[@]}"
+  echo "Listing JACK connections..."
+  j_lsp="$(jack_lsp -c)"
+  
+  n=$(echo "$j_lsp" | wc -l)
+  #echo $n
+  s=1
+  for j in $(seq 1 $n); do
+    element=$(echo "$j_lsp"|head -n $j|tail -n 1)
+    #	echo "$j	$element"
+    jack[$j]="$element"
+    if [[ "$element" == "$sys_playback_pat"* ]]; then
+      echo "Main output $s: $element (line $j)"
+      sys_out[$s]=$j
+      s=$(($s+1))
+    fi
+  done
+  
+  nb_sys_out=$(echo "${sys_out[*]}"|wc -l)
+  #echo "sys_out: ${sys_out[*]}"
+  #echo "nb_sysout: ${#sys_out[@]}"
 }
 
 detect(){
-echo "Detecting where goes what..."
-j=0
-for sout in ${sys_out[@]}; do
+  echo "Detecting where goes what..."
+  j=0
+  for sout in ${sys_out[@]}; do
     s=1
     n=$(($sout+1))
     while [[ "${jack[$n]}" == "   "* ]]; do
-#        echo "$n - ${jack[$n]}"
-        if [[ "${jack[$n]}" == "   $fx_pat"* ]]; then
-            main_out[$s]=$n
-#    	echo "$n - fx out $s: ${jack[$n]}"
-            s=$(($s+1))
-        fi
-        n=$(($n+1))
+      #        echo "$n - ${jack[$n]}"
+      if [[ "${jack[$n]}" == "   $fx_pat"* ]]; then
+        main_out[$s]=$n
+        #    	echo "$n - fx out $s: ${jack[$n]}"
+        s=$(($s+1))
+      fi
+      n=$(($n+1))
     done
-#echo "main_out: ${main_out[*]}"
+    #echo "main_out: ${main_out[*]}"
     echo "Connecting ${jack[$sout]}"
     for element in ${main_out[@]}; do
-        echo "	jack_connect $(trim ${jack[$element]}) $out_pat:$out_pin${pin_num[$j]}"
-        jack_connect $(trim ${jack[$element]}) $out_pat:$out_pin${pin_num[$j]}
+      echo "	jack_connect $(trim ${jack[$element]}) $out_pat:$out_pin${pin_num[$j]}"
+      jack_connect $(trim ${jack[$element]}) $out_pat:$out_pin${pin_num[$j]}
     done
     j=$(($j+1))
     unset main_out
-done
+  done
 }
 
 app_name="JACK-MODEP Connector"
